@@ -3,7 +3,9 @@ package net.bounceme.chronos.infinispan;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+import org.infinispan.Cache;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -34,9 +36,27 @@ public class InfinispanTests {
 
 	@Autowired
 	WeatherService weatherService;
+	
+	@Autowired
+	Cache<String, LocationWeather> cache;
 
 	@Test
 	public void test_AA_Setup() throws Exception {
+		Assert.assertFalse(CollectionUtils.isEmpty(fetchWeathers()));
+	}
+	
+	@Test
+	public void test_AB_CacheExpire() throws Exception {
+		Assert.assertFalse(CollectionUtils.isEmpty(fetchWeathers()));
+		
+		TimeUnit.SECONDS.sleep(5);
+		
+		Assert.assertTrue(cache.isEmpty());
+		
+		Assert.assertFalse(CollectionUtils.isEmpty(fetchWeathers()));
+	}
+	
+	private List<LocationWeather> fetchWeathers() {
 		List<LocationWeather> weathers = new ArrayList<>();
 
 		Arrays.asList(locations).forEach(location -> {
@@ -44,7 +64,7 @@ public class InfinispanTests {
 			logger.info("{} - {}", location, weather);
 			weathers.add(weather);
 		});
-
-		Assert.assertFalse(CollectionUtils.isEmpty(weathers));
+		
+		return weathers;
 	}
 }

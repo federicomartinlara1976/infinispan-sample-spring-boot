@@ -2,7 +2,9 @@ package net.bounceme.chronos.infinispan.listeners;
 
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachelistener.annotation.CacheEntryCreated;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntryExpired;
 import org.infinispan.notifications.cachelistener.event.CacheEntryCreatedEvent;
+import org.infinispan.notifications.cachelistener.event.CacheEntryExpiredEvent;
 import org.infinispan.notifications.cachemanagerlistener.annotation.CacheStarted;
 import org.infinispan.notifications.cachemanagerlistener.annotation.CacheStopped;
 import org.infinispan.notifications.cachemanagerlistener.annotation.ViewChanged;
@@ -32,6 +34,14 @@ public class CacheListener {
 	public void created(CacheEntryCreatedEvent event) {
 		if (!event.isPre()) {
 			this.logger.info("New entry {}, {} created in the cache {}", event.getKey(), event.getValue(), event.getCache().getName());
+			this.logger.info("Cache {} has {} entries", event.getCache().getName(), event.getCache().size());
+		}
+	}
+	
+	@CacheEntryExpired
+	public void expired(CacheEntryExpiredEvent event) {
+		if (!event.isPre()) {
+			this.logger.info("Entry {}, {} expired in the cache {}", event.getKey(), event.getValue(), event.getCache().getName());
 			this.logger.info("Cache {} has {} entries", event.getCache().getName(), event.getCache().size());
 		}
 	}
