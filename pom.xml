@@ -98,6 +98,7 @@
 	</build>
 
 	<dependencies>
+		<!-- Spring boot dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
@@ -106,6 +107,13 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+
+		<!-- App dependencies -->
+		<dependency>
+			<groupId>org.infinispan</groupId>
+			<artifactId>infinispan-core</artifactId>
+			<version>9.1.0.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
