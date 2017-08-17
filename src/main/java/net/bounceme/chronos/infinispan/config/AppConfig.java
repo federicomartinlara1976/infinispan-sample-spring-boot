@@ -35,7 +35,7 @@ public class AppConfig {
 	@Bean
 	public ConfigurationBuilder configurationBuilder() {
 		ConfigurationBuilder config = new ConfigurationBuilder();
-		config.expiration().lifespan(5, TimeUnit.SECONDS);
+		config.expiration().lifespan(5, TimeUnit.MINUTES);
 		config.clustering().cacheMode(CacheMode.DIST_SYNC);
 		return config;
 	}

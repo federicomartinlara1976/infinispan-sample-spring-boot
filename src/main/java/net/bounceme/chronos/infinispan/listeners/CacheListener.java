@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
 @SuppressWarnings("rawtypes")
-@Listener
+@Listener(clustered = true)
 public class CacheListener {
 
 	Logger logger = LoggerFactory.getLogger(CacheListener.class);
@@ -25,9 +25,9 @@ public class CacheListener {
 	@Value("${infinispan.expectedNodes}")
 	private Integer expectedNodes;
 
-	CountDownLatch clusterFormedLatch = new CountDownLatch(1);
+	private CountDownLatch clusterFormedLatch = new CountDownLatch(1);
 
-	CountDownLatch shutdownLatch = new CountDownLatch(1);
+	private CountDownLatch shutdownLatch = new CountDownLatch(1);
 
 	@CacheStarted
 	@CacheStopped
@@ -42,10 +42,8 @@ public class CacheListener {
 
 	@CacheEntryCreated
 	public void created(CacheEntryCreatedEvent event) {
-		if (!event.isPre()) {
-			this.logger.info("New entry {}, {} created in the cache {}", event.getKey(), event.getValue(),
-					event.getCache().getName());
-			this.logger.info("Cache {} has {} entries", event.getCache().getName(), event.getCache().size());
+		if (!event.isOriginLocal()) {
+			this.logger.info("-- Entry for {} modified by another node in the cluster\n", event.getKey());
 		}
 	}
 
@@ -68,5 +66,12 @@ public class CacheListener {
 		else if (event.getNewMembers().size() < event.getOldMembers().size()) {
 			shutdownLatch.countDown();
 		}
+	}
+
+	/**
+	 * @return the clusterFormedLatch
+	 */
+	public CountDownLatch getClusterFormedLatch() {
+		return clusterFormedLatch;
 	}
 }
