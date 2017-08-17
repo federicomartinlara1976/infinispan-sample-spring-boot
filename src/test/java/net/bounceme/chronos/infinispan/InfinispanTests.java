@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.CollectionUtils;
 
@@ -22,27 +23,28 @@ import net.bounceme.chronos.infinispan.service.WeatherService;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = AppConfig.class)
+@TestPropertySource(locations="classpath:test.properties")
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class InfinispanTests {
 	Logger logger = LoggerFactory.getLogger(InfinispanTests.class);
-	
+
 	static final String[] locations = { "Rome, Italy", "Como, Italy", "Basel, Switzerland", "Bern, Switzerland",
-	         "London, UK", "Newcastle, UK", "Bucarest, Romania", "Cluj-Napoca, Romania", "Ottawa, Canada",
-	         "Toronto, Canada", "Lisbon, Portugal", "Porto, Portugal", "Raleigh, USA", "Washington, USA" };
-	
-	@Autowired 
+			"London, UK", "Newcastle, UK", "Bucarest, Romania", "Cluj-Napoca, Romania", "Ottawa, Canada",
+			"Toronto, Canada", "Lisbon, Portugal", "Porto, Portugal", "Raleigh, USA", "Washington, USA" };
+
+	@Autowired
 	WeatherService weatherService;
 
-    @Test
-    public void test_AA_Setup() throws Exception {
-    	List<LocationWeather> weathers = new ArrayList<>();
-    	
-    	Arrays.asList(locations).forEach(location -> {
+	@Test
+	public void test_AA_Setup() throws Exception {
+		List<LocationWeather> weathers = new ArrayList<>();
+
+		Arrays.asList(locations).forEach(location -> {
 			LocationWeather weather = weatherService.getWeatherForLocation(location);
 			logger.info("{} - {}", location, weather);
 			weathers.add(weather);
 		});
-    	
-    	Assert.assertFalse(CollectionUtils.isEmpty(weathers));
-    }
+
+		Assert.assertFalse(CollectionUtils.isEmpty(weathers));
+	}
 }
