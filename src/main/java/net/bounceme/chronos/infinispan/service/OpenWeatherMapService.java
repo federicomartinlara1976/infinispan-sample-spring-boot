@@ -16,7 +16,7 @@ import org.w3c.dom.Element;
 import net.bounceme.chronos.infinispan.model.LocationWeather;
 
 @Service
-public class OpenWeatherMapService implements WeatherService {
+public class OpenWeatherMapService extends CachingWeatherService {
 	final private static String OWM_BASE_URL = "http://api.openweathermap.org/data/2.5/weather";
 
 	private DocumentBuilder db;
@@ -58,8 +58,7 @@ public class OpenWeatherMapService implements WeatherService {
 	}
 
 	@Override
-	public LocationWeather getWeatherForLocation(String location) {
-
+	protected LocationWeather fetchWeather(String location) {
 		Document dom = fetchData(location);
 		Element current = (Element) dom.getElementsByTagName("current").item(0);
 		Element temperature = (Element) current.getElementsByTagName("temperature").item(0);
@@ -68,5 +67,4 @@ public class OpenWeatherMapService implements WeatherService {
 		return new LocationWeather(Float.parseFloat(temperature.getAttribute("value")), weather.getAttribute("value"),
 				split[1].trim());
 	}
-
 }

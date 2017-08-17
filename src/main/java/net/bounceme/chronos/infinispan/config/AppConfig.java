@@ -1,12 +1,16 @@
 package net.bounceme.chronos.infinispan.config;
 
 import org.apache.commons.lang3.StringUtils;
+import org.infinispan.Cache;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import net.bounceme.chronos.infinispan.listeners.CacheListener;
+import net.bounceme.chronos.infinispan.model.LocationWeather;
 import net.bounceme.chronos.infinispan.service.OpenWeatherMapService;
 import net.bounceme.chronos.infinispan.service.RandomWeatherService;
 import net.bounceme.chronos.infinispan.service.WeatherService;
@@ -20,6 +24,14 @@ public class AppConfig {
 	@Bean
 	public EmbeddedCacheManager cacheManager() {
 		 return new DefaultCacheManager();
+	}
+	
+	@Bean
+	public Cache<String, LocationWeather> cache(EmbeddedCacheManager manager) {
+		manager.defineConfiguration("weather", new ConfigurationBuilder().build());
+		Cache<String, LocationWeather> cache = manager.getCache("weather");
+		cache.addListener(new CacheListener());
+		return cache;
 	}
 	
 	@Bean
