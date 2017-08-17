@@ -46,10 +46,15 @@ public class AppConfig {
 	}
 	
 	@Bean
-	public Cache<String, LocationWeather> cache(EmbeddedCacheManager manager) {
+	public CacheListener cacheListener() {
+		return new CacheListener();
+	}
+	
+	@Bean
+	public Cache<String, LocationWeather> cache(EmbeddedCacheManager manager, CacheListener cacheListener) {
 		manager.defineConfiguration("weather", new ConfigurationBuilder().build());
 		Cache<String, LocationWeather> cache = manager.getCache("weather");
-		cache.addListener(new CacheListener());
+		cache.addListener(cacheListener);
 		return cache;
 	}
 	

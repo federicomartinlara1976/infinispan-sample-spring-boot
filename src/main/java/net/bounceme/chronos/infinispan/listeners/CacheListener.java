@@ -1,5 +1,7 @@
 package net.bounceme.chronos.infinispan.listeners;
 
+import java.util.concurrent.CountDownLatch;
+
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachelistener.annotation.CacheEntryCreated;
 import org.infinispan.notifications.cachelistener.annotation.CacheEntryExpired;
@@ -12,12 +14,20 @@ import org.infinispan.notifications.cachemanagerlistener.event.Event;
 import org.infinispan.notifications.cachemanagerlistener.event.ViewChangedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 @SuppressWarnings("rawtypes")
 @Listener
 public class CacheListener {
 
 	Logger logger = LoggerFactory.getLogger(CacheListener.class);
+
+	@Value("${infinispan.expectedNodes}")
+	private Integer expectedNodes;
+
+	CountDownLatch clusterFormedLatch = new CountDownLatch(1);
+
+	CountDownLatch shutdownLatch = new CountDownLatch(1);
 
 	@CacheStarted
 	@CacheStopped
@@ -33,21 +43,30 @@ public class CacheListener {
 	@CacheEntryCreated
 	public void created(CacheEntryCreatedEvent event) {
 		if (!event.isPre()) {
-			this.logger.info("New entry {}, {} created in the cache {}", event.getKey(), event.getValue(), event.getCache().getName());
+			this.logger.info("New entry {}, {} created in the cache {}", event.getKey(), event.getValue(),
+					event.getCache().getName());
 			this.logger.info("Cache {} has {} entries", event.getCache().getName(), event.getCache().size());
 		}
 	}
-	
+
 	@CacheEntryExpired
 	public void expired(CacheEntryExpiredEvent event) {
 		if (!event.isPre()) {
-			this.logger.info("Entry {}, {} expired in the cache {}", event.getKey(), event.getValue(), event.getCache().getName());
+			this.logger.info("Entry {}, {} expired in the cache {}", event.getKey(), event.getValue(),
+					event.getCache().getName());
 			this.logger.info("Cache {} has {} entries", event.getCache().getName(), event.getCache().size());
 		}
 	}
 
 	@ViewChanged
 	public void viewChanged(ViewChangedEvent event) {
-		this.logger.info("Entry {} has changed", event.getViewId());
+		this.logger.info("---- View changed: {} ----\n", event.getNewMembers());
+
+		if (event.getCacheManager().getMembers().size() == expectedNodes) {
+			clusterFormedLatch.countDown();
+		}
+		else if (event.getNewMembers().size() < event.getOldMembers().size()) {
+			shutdownLatch.countDown();
+		}
 	}
 }
