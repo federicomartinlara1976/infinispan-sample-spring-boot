@@ -18,7 +18,6 @@ import net.bounceme.chronos.infinispan.service.WeatherService;
 public class App implements CommandLineRunner {
 	
 	Logger logger = LoggerFactory.getLogger(App.class);
-
 	
 	static final String[] locations = { "Rome, Italy", "Como, Italy", "Basel, Switzerland", "Bern, Switzerland",
 	         "London, UK", "Newcastle, UK", "Bucarest, Romania", "Cluj-Napoca, Romania", "Ottawa, Canada",
