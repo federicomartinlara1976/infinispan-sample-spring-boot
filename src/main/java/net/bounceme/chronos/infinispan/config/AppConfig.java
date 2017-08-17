@@ -1,5 +1,7 @@
 package net.bounceme.chronos.infinispan.config;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.lang3.StringUtils;
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
@@ -20,10 +22,17 @@ public class AppConfig {
 
 	@Value("${infinispan.owmapikey}")
 	private String apiKey;
+	
+	@Bean
+	public ConfigurationBuilder configurationBuilder() {
+		ConfigurationBuilder config = new ConfigurationBuilder();
+		config.expiration().lifespan(5, TimeUnit.SECONDS);
+		return config;
+	}
 
 	@Bean
-	public EmbeddedCacheManager cacheManager() {
-		 return new DefaultCacheManager();
+	public EmbeddedCacheManager cacheManager(ConfigurationBuilder config) {
+		 return new DefaultCacheManager(config.build());
 	}
 	
 	@Bean
