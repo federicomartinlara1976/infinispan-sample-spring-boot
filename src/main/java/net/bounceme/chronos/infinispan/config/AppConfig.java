@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import net.bounceme.chronos.infinispan.listeners.CacheListener;
+import net.bounceme.chronos.infinispan.listeners.ClusterCacheListener;
 import net.bounceme.chronos.infinispan.model.LocationGrouper;
 import net.bounceme.chronos.infinispan.model.LocationWeather;
 import net.bounceme.chronos.infinispan.service.OpenWeatherMapService;
@@ -36,27 +37,34 @@ public class AppConfig {
 	@Bean
 	public ConfigurationBuilder configurationBuilder() {
 		ConfigurationBuilder config = new ConfigurationBuilder();
-		config.expiration().lifespan(5, TimeUnit.MINUTES);
+		config.expiration().lifespan(5, TimeUnit.SECONDS);
 		config.clustering().cacheMode(CacheMode.DIST_SYNC).hash().groups().enabled()
 				.addGrouper(new LocationGrouper());
 		return config;
 	}
 
 	@Bean
-	public EmbeddedCacheManager cacheManager(ConfigurationBuilder config, GlobalConfigurationBuilder global) {
-		return new DefaultCacheManager(global.build(), config.build());
+	public EmbeddedCacheManager cacheManager(ConfigurationBuilder config, GlobalConfigurationBuilder global, ClusterCacheListener listener) {
+		EmbeddedCacheManager manager = new DefaultCacheManager(global.build(), config.build());
+		manager.addListener(listener);
+		return manager;
 	}
 
 	@Bean
 	public CacheListener cacheListener() {
 		return new CacheListener();
 	}
+	
+	@Bean
+	public ClusterCacheListener clusterCacheListener() {
+		return new ClusterCacheListener();
+	}
 
 	@Bean
-	public Cache<String, LocationWeather> cache(EmbeddedCacheManager manager, CacheListener cacheListener) {
+	public Cache<String, LocationWeather> cache(EmbeddedCacheManager manager, CacheListener listener) {
 		manager.defineConfiguration("weather", new ConfigurationBuilder().build());
 		Cache<String, LocationWeather> cache = manager.getCache("weather");
-		cache.addListener(cacheListener);
+		cache.addListener(listener);
 		return cache;
 	}
 

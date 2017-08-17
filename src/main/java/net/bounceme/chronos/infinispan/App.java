@@ -1,7 +1,9 @@
 package net.bounceme.chronos.infinispan;
 
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
+import org.infinispan.manager.EmbeddedCacheManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +12,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import net.bounceme.chronos.infinispan.listeners.CacheListener;
+import net.bounceme.chronos.infinispan.listeners.ClusterCacheListener;
 import net.bounceme.chronos.infinispan.model.LocationWeather;
 import net.bounceme.chronos.infinispan.service.WeatherService;
 
@@ -23,7 +25,10 @@ public class App implements CommandLineRunner {
 	WeatherService weatherService;
 
 	@Autowired
-	CacheListener listener;
+	ClusterCacheListener clusterCacheListener;
+
+	@Autowired
+	EmbeddedCacheManager cacheManager;
 
 	static final String[] locations = { "Rome, Italy", "Como, Italy", "Basel, Switzerland", "Bern, Switzerland",
 			"London, UK", "Newcastle, UK", "Bucarest, Romania", "Cluj-Napoca, Romania", "Ottawa, Canada",
@@ -39,9 +44,17 @@ public class App implements CommandLineRunner {
 	@Override
 	public void run(String... args) throws Exception {
 		logger.info("---- Waiting for cluster to form ----");
-		listener.getClusterFormedLatch().await();
+		clusterCacheListener.getClusterFormedLatch().await();
 
-		// fetchWeather();
+		if (cacheManager.isCoordinator()) {
+			fetchWeather();
+
+			fetchWeather();
+
+			TimeUnit.SECONDS.sleep(5);
+
+			fetchWeather();
+		}
 		//
 		// TimeUnit.SECONDS.sleep(5);
 		//

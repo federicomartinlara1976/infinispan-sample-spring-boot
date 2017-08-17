@@ -1,7 +1,5 @@
 package net.bounceme.chronos.infinispan.service;
 
-import java.util.concurrent.TimeUnit;
-
 import org.infinispan.Cache;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -17,7 +15,7 @@ public abstract class CachingWeatherService implements WeatherService {
 		LocationWeather weather = cache.get(location);
 		if (weather == null) {
 			weather = fetchWeather(location);
-			cache.put(location, weather, 5, TimeUnit.SECONDS);
+			cache.put(location, weather);
 		}
 		return weather;
 	}
