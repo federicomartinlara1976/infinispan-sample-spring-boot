@@ -13,11 +13,11 @@ public class LocationWeather implements Serializable {
 	 */
 	private static final long serialVersionUID = 1732369060538972862L;
 
-	final float temperature;
+	private final float temperature;
 
-	final String conditions;
+	private final String conditions;
 
-	final String country;
+	private final String country;
 
 	public LocationWeather(float temperature, String conditions, String country) {
 		this.temperature = temperature;

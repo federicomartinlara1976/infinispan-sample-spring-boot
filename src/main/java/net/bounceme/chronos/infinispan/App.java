@@ -1,9 +1,16 @@
 package net.bounceme.chronos.infinispan;
 
+import static java.util.stream.Collectors.averagingDouble;
+import static java.util.stream.Collectors.groupingBy;
+
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
+import org.infinispan.Cache;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.stream.CacheCollectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +36,9 @@ public class App implements CommandLineRunner {
 
 	@Autowired
 	EmbeddedCacheManager cacheManager;
+	
+	@Autowired
+	Cache<String, LocationWeather> cache;
 
 	static final String[] locations = { "Rome, Italy", "Como, Italy", "Basel, Switzerland", "Bern, Switzerland",
 			"London, UK", "Newcastle, UK", "Bucarest, Romania", "Cluj-Napoca, Romania", "Ottawa, Canada",
@@ -54,6 +64,8 @@ public class App implements CommandLineRunner {
 			TimeUnit.SECONDS.sleep(5);
 
 			fetchWeather();
+			
+			computeCountryAverages();
 		}
 		//
 		// TimeUnit.SECONDS.sleep(5);
@@ -66,5 +78,15 @@ public class App implements CommandLineRunner {
 			LocationWeather weather = weatherService.getWeatherForLocation(location);
 			logger.info("{} - {}", location, weather);
 		});
+	}
+
+	private void computeCountryAverages() {
+		logger.info("---- Average country temperatures ----");
+		Map<String, Double> averages = cache.entrySet().stream()
+	              .collect(CacheCollectors.serializableCollector(() -> groupingBy(e -> e.getValue().getCountry(),
+	                      averagingDouble(e -> e.getValue().getTemperature()))));
+		for (Entry<String, Double> entry : averages.entrySet()) {
+			logger.info("Average temperature in %s is %.1f° C\n", entry.getKey(), entry.getValue());
+		}
 	}
 }
