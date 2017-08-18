@@ -86,7 +86,7 @@ public class App implements CommandLineRunner {
 	              .collect(CacheCollectors.serializableCollector(() -> groupingBy(e -> e.getValue().getCountry(),
 	                      averagingDouble(e -> e.getValue().getTemperature()))));
 		for (Entry<String, Double> entry : averages.entrySet()) {
-			logger.info("Average temperature in %s is %.1f° C\n", entry.getKey(), entry.getValue());
+			logger.info("Average temperature in {} is {}f° C\n", entry.getKey(), entry.getValue());
 		}
 	}
 }

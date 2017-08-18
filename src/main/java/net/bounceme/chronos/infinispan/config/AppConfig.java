@@ -1,5 +1,6 @@
 package net.bounceme.chronos.infinispan.config;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import net.bounceme.chronos.infinispan.App;
 import net.bounceme.chronos.infinispan.listeners.CacheListener;
 import net.bounceme.chronos.infinispan.listeners.ClusterCacheListener;
 import net.bounceme.chronos.infinispan.model.LocationGrouper;
@@ -44,8 +46,9 @@ public class AppConfig {
 	}
 
 	@Bean
-	public EmbeddedCacheManager cacheManager(ConfigurationBuilder config, GlobalConfigurationBuilder global, ClusterCacheListener listener) {
-		EmbeddedCacheManager manager = new DefaultCacheManager(global.build(), config.build());
+	public EmbeddedCacheManager cacheManager(ConfigurationBuilder config, GlobalConfigurationBuilder global, ClusterCacheListener listener) throws IOException {
+		//EmbeddedCacheManager manager = new DefaultCacheManager(global.build(), config.build());
+		EmbeddedCacheManager manager = new DefaultCacheManager(App.class.getResourceAsStream("/weatherapp-infinispan.xml"));
 		manager.addListener(listener);
 		return manager;
 	}
