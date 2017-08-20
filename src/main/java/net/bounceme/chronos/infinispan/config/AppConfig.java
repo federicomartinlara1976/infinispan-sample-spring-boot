@@ -10,11 +10,12 @@ import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.persistence.remote.configuration.ExhaustedAction;
+import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import net.bounceme.chronos.infinispan.App;
 import net.bounceme.chronos.infinispan.listeners.CacheListener;
 import net.bounceme.chronos.infinispan.listeners.ClusterCacheListener;
 import net.bounceme.chronos.infinispan.model.LocationGrouper;
@@ -29,6 +30,9 @@ public class AppConfig {
 	@Value("${infinispan.owmapikey}")
 	private String apiKey;
 
+	@Value("${infinispan.remote}")
+	private String isRemote;
+
 	@Bean
 	public GlobalConfigurationBuilder clusteredConfigurationBuilder() {
 		GlobalConfigurationBuilder global = GlobalConfigurationBuilder.defaultClusteredBuilder();
@@ -39,16 +43,27 @@ public class AppConfig {
 	@Bean
 	public ConfigurationBuilder configurationBuilder() {
 		ConfigurationBuilder config = new ConfigurationBuilder();
-		config.expiration().lifespan(5, TimeUnit.SECONDS);
-		config.clustering().cacheMode(CacheMode.DIST_SYNC).hash().groups().enabled()
-				.addGrouper(new LocationGrouper());
+		if (!Boolean.getBoolean(isRemote)) {
+			config.expiration().lifespan(5, TimeUnit.SECONDS);
+			config.clustering().cacheMode(CacheMode.DIST_SYNC).hash().groups().enabled()
+					.addGrouper(new LocationGrouper());
+		}
+		else {
+			config.persistence().addStore(RemoteStoreConfigurationBuilder.class).fetchPersistentState(false)
+					.ignoreModifications(false).purgeOnStartup(false).remoteCacheName("WeatherApp").rawValues(true)
+					.addServer().host("anubis.salasierra12.net")
+					.connectionPool().maxActive(10)
+					.exhaustedAction(ExhaustedAction.CREATE_NEW).async().enable();
+		}
 		return config;
 	}
 
 	@Bean
-	public EmbeddedCacheManager cacheManager(ConfigurationBuilder config, GlobalConfigurationBuilder global, ClusterCacheListener listener) throws IOException {
-		//EmbeddedCacheManager manager = new DefaultCacheManager(global.build(), config.build());
-		EmbeddedCacheManager manager = new DefaultCacheManager(App.class.getResourceAsStream("/weatherapp-infinispan.xml"));
+	public EmbeddedCacheManager cacheManager(ConfigurationBuilder config, GlobalConfigurationBuilder global,
+			ClusterCacheListener listener) throws IOException {
+		EmbeddedCacheManager manager = new DefaultCacheManager(global.build(), config.build());
+		// EmbeddedCacheManager manager = new
+		// DefaultCacheManager(App.class.getResourceAsStream("/weatherapp-infinispan.xml"));
 		manager.addListener(listener);
 		return manager;
 	}
@@ -57,7 +72,7 @@ public class AppConfig {
 	public CacheListener cacheListener() {
 		return new CacheListener();
 	}
-	
+
 	@Bean
 	public ClusterCacheListener clusterCacheListener() {
 		return new ClusterCacheListener();

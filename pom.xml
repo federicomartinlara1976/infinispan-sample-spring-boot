@@ -112,9 +112,10 @@
 		<!-- App dependencies -->
 		<dependency>
 			<groupId>org.infinispan</groupId>
-			<artifactId>infinispan-core</artifactId>
+			<artifactId>infinispan-embedded</artifactId>
 			<version>9.1.0.Final</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
