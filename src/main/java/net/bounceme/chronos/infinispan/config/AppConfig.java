@@ -43,25 +43,15 @@ public class AppConfig {
 	@Bean
 	public ConfigurationBuilder configurationBuilder() {
 		ConfigurationBuilder config = new ConfigurationBuilder();
-		if (!Boolean.getBoolean(isRemote)) {
-			config.expiration().lifespan(5, TimeUnit.SECONDS);
-			config.clustering().cacheMode(CacheMode.DIST_SYNC).hash().groups().enabled()
-					.addGrouper(new LocationGrouper());
-		}
-		else {
-			config.persistence().addStore(RemoteStoreConfigurationBuilder.class).fetchPersistentState(false)
-					.ignoreModifications(false).purgeOnStartup(false).remoteCacheName("WeatherApp").rawValues(true)
-					.addServer().host("anubis.salasierra12.net")
-					.connectionPool().maxActive(10)
-					.exhaustedAction(ExhaustedAction.CREATE_NEW).async().enable();
-		}
+		config.expiration().lifespan(5, TimeUnit.SECONDS);
+		config.clustering().cacheMode(CacheMode.DIST_SYNC).hash().groups().enabled().addGrouper(new LocationGrouper());
 		return config;
 	}
 
 	@Bean
-	public EmbeddedCacheManager cacheManager(ConfigurationBuilder config, GlobalConfigurationBuilder global,
+	public DefaultCacheManager cacheManager(ConfigurationBuilder config, GlobalConfigurationBuilder global,
 			ClusterCacheListener listener) throws IOException {
-		EmbeddedCacheManager manager = new DefaultCacheManager(global.build(), config.build());
+		DefaultCacheManager manager = new DefaultCacheManager(global.build(), config.build());
 		// EmbeddedCacheManager manager = new
 		// DefaultCacheManager(App.class.getResourceAsStream("/weatherapp-infinispan.xml"));
 		manager.addListener(listener);
@@ -79,9 +69,17 @@ public class AppConfig {
 	}
 
 	@Bean
-	public Cache<String, LocationWeather> cache(EmbeddedCacheManager manager, CacheListener listener) {
+	public Cache<String, LocationWeather> weatherCache(EmbeddedCacheManager manager, CacheListener listener) {
 		manager.defineConfiguration("weather", new ConfigurationBuilder().build());
 		Cache<String, LocationWeather> cache = manager.getCache("weather");
+		cache.addListener(listener);
+		return cache;
+	}
+
+	@Bean
+	public Cache<String, String> stringCache(EmbeddedCacheManager manager, CacheListener listener) {
+		manager.defineConfiguration("string", new ConfigurationBuilder().build());
+		Cache<String, String> cache = manager.getCache("string");
 		cache.addListener(listener);
 		return cache;
 	}
