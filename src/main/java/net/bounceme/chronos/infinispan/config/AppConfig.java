@@ -26,6 +26,10 @@ import net.bounceme.chronos.infinispan.service.WeatherService;
 
 @Configuration
 public class AppConfig {
+	
+	private static final String CACHE_STRING = "local-string";
+	private static final String CACHE_WEATHER = "local-weather";
+	private static final String CLUSTER_NAME = "weatherApp";
 
 	@Value("${infinispan.owmapikey}")
 	private String apiKey;
@@ -39,7 +43,7 @@ public class AppConfig {
 	@Bean
 	public GlobalConfigurationBuilder clusteredConfigurationBuilder() {
 		GlobalConfigurationBuilder global = GlobalConfigurationBuilder.defaultClusteredBuilder();
-		global.transport().clusterName("WeatherApp");
+		global.transport().clusterName(CLUSTER_NAME);
 		return global;
 	}
 
@@ -55,8 +59,6 @@ public class AppConfig {
 	public DefaultCacheManager cacheManager(ConfigurationBuilder config, GlobalConfigurationBuilder global,
 			ClusterCacheListener listener) {
 		DefaultCacheManager manager = new DefaultCacheManager(global.build(), config.build());
-		// EmbeddedCacheManager manager = new
-		// DefaultCacheManager(App.class.getResourceAsStream("/weatherapp-infinispan.xml"));
 		manager.addListener(listener);
 		return manager;
 	}
@@ -73,16 +75,16 @@ public class AppConfig {
 
 	@Bean
 	public Cache<String, LocationWeather> weatherCache(EmbeddedCacheManager manager, CacheListener listener) {
-		manager.defineConfiguration("weather", new ConfigurationBuilder().build());
-		Cache<String, LocationWeather> cache = manager.getCache("weather");
+		manager.defineConfiguration(CACHE_WEATHER, new ConfigurationBuilder().build());
+		Cache<String, LocationWeather> cache = manager.getCache(CACHE_WEATHER);
 		cache.addListener(listener);
 		return cache;
 	}
 
 	@Bean
 	public Cache<String, String> stringCache(EmbeddedCacheManager manager, CacheListener listener) {
-		manager.defineConfiguration("string", new ConfigurationBuilder().build());
-		Cache<String, String> cache = manager.getCache("string");
+		manager.defineConfiguration(CACHE_STRING, new ConfigurationBuilder().build());
+		Cache<String, String> cache = manager.getCache(CACHE_STRING);
 		cache.addListener(listener);
 		return cache;
 	}
@@ -102,10 +104,10 @@ public class AppConfig {
 	@Bean
 	public CacheAdapter<String, String> cache(RemoteCacheManager remoteManager, DefaultCacheManager manager, ConfigurationBuilder config) {
 		if (Boolean.parseBoolean(remote)) {
-			return new CacheAdapter<>(remoteManager.getCache("string"));
+			return new CacheAdapter<>(remoteManager.getCache(CACHE_STRING));
 		}
 		else {
-			Cache<String, String> cache = manager.getCache("string");
+			Cache<String, String> cache = manager.getCache(CACHE_STRING);
 			cache.addListener(new CacheListener());
 			return new CacheAdapter<>(cache);
 		}
