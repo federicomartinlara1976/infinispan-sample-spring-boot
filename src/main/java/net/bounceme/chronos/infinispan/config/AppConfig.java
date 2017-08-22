@@ -1,17 +1,16 @@
 package net.bounceme.chronos.infinispan.config;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.infinispan.Cache;
+import org.infinispan.client.hotrod.RemoteCacheManager;
+import org.infinispan.client.hotrod.impl.ConfigurationProperties;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.persistence.remote.configuration.ExhaustedAction;
-import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +19,7 @@ import net.bounceme.chronos.infinispan.listeners.CacheListener;
 import net.bounceme.chronos.infinispan.listeners.ClusterCacheListener;
 import net.bounceme.chronos.infinispan.model.LocationGrouper;
 import net.bounceme.chronos.infinispan.model.LocationWeather;
+import net.bounceme.chronos.infinispan.service.CacheAdapter;
 import net.bounceme.chronos.infinispan.service.OpenWeatherMapService;
 import net.bounceme.chronos.infinispan.service.RandomWeatherService;
 import net.bounceme.chronos.infinispan.service.WeatherService;
@@ -31,7 +31,10 @@ public class AppConfig {
 	private String apiKey;
 
 	@Value("${infinispan.remote}")
-	private String isRemote;
+	private String remote;
+	
+	@Value("${infinispan.server}")
+	private String server;
 
 	@Bean
 	public GlobalConfigurationBuilder clusteredConfigurationBuilder() {
@@ -50,7 +53,7 @@ public class AppConfig {
 
 	@Bean
 	public DefaultCacheManager cacheManager(ConfigurationBuilder config, GlobalConfigurationBuilder global,
-			ClusterCacheListener listener) throws IOException {
+			ClusterCacheListener listener) {
 		DefaultCacheManager manager = new DefaultCacheManager(global.build(), config.build());
 		// EmbeddedCacheManager manager = new
 		// DefaultCacheManager(App.class.getResourceAsStream("/weatherapp-infinispan.xml"));
@@ -82,6 +85,30 @@ public class AppConfig {
 		Cache<String, String> cache = manager.getCache("string");
 		cache.addListener(listener);
 		return cache;
+	}
+	
+	@Bean
+	public RemoteCacheManager remoteCacheManager(org.infinispan.client.hotrod.configuration.ConfigurationBuilder builder) {
+		return new RemoteCacheManager(builder.build());
+	}
+	
+	@Bean
+	public org.infinispan.client.hotrod.configuration.ConfigurationBuilder remoteCacheConfiguration() {
+		org.infinispan.client.hotrod.configuration.ConfigurationBuilder remoteBuilder = new org.infinispan.client.hotrod.configuration.ConfigurationBuilder();
+		remoteBuilder.addServer().host(server).port(ConfigurationProperties.DEFAULT_HOTROD_PORT);
+		return remoteBuilder;
+	}
+	
+	@Bean
+	public CacheAdapter<String, String> cache(RemoteCacheManager remoteManager, DefaultCacheManager manager, ConfigurationBuilder config) {
+		if (Boolean.parseBoolean(remote)) {
+			return new CacheAdapter<>(remoteManager.getCache("string"));
+		}
+		else {
+			Cache<String, String> cache = manager.getCache("string");
+			cache.addListener(new CacheListener());
+			return new CacheAdapter<>(cache);
+		}
 	}
 
 	@Bean
